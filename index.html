@@ -2,121 +2,101 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Coupang 價格雷達 | 專業數據追蹤</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coupang Radar | 數據儀表板</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: #f8fafc; }
-        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); }
-        .hero-glow { background: radial-gradient(circle at 50% -20%, #3b82f633, transparent 70%); }
-        .card-glow:hover { border-color: #3b82f6; box-shadow: 0 0 40px -10px rgba(59, 130, 246, 0.4); transform: translateY(-4px); }
-        .animate-float { animation: float 6s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        .shimmer { background: linear-gradient(90deg, #1e293b 0%, #334155 50%, #1e293b 100%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
-        @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
-        input::placeholder { color: #475569; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: #f1f5f9; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.05); }
+        .stat-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(255,255,255,0.05); }
+        .search-glow:focus-within { box-shadow: 0 0 25px -5px rgba(59, 130, 246, 0.5); border-color: #3b82f6; }
     </style>
 </head>
-<body class="hero-glow min-h-screen">
+<body class="min-h-screen">
 
-    <nav class="sticky top-0 z-50 glass border-b border-white/5 py-4 px-6">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="bg-blue-600 p-2 rounded-xl animate-pulse shadow-[0_0_30px_rgba(37,99,235,0.6)]">
-                    <i data-lucide="radar" class="w-6 h-6 text-white"></i>
+    <div class="flex flex-col lg:flex-row min-h-screen">
+        
+        <aside class="w-full lg:w-80 p-8 glass flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-3 mb-10">
+                    <div class="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-600/20">
+                        <i data-lucide="radar" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <h1 class="text-2xl font-extrabold tracking-tighter">CP <span class="text-blue-500">RADAR</span></h1>
                 </div>
-                <div>
-                    <h1 class="text-xl font-black tracking-tighter leading-none">CP <span class="text-blue-500">RADAR</span></h1>
-                    <p class="text-[10px] text-slate-500 font-bold tracking-widest uppercase">Precision Tracking</p>
-                </div>
-            </div>
-            <div id="statusBadge" class="flex items-center gap-2 bg-green-500/10 text-green-400 px-3 py-1.5 rounded-full text-[10px] font-black border border-green-500/20">
-                <span class="relative flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                </span>
-                雲端同步正常
-            </div>
-        </div>
-    </nav>
 
-    <main class="max-w-7xl mx-auto px-6 py-12">
-        <div class="text-center mb-16 relative">
-            <div class="absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 bg-blue-600/10 blur-[120px] -z-10"></div>
-            <h2 class="text-5xl md:text-7xl font-black mb-8 bg-gradient-to-b from-white to-slate-500 bg-clip-text text-transparent leading-tight tracking-tighter">
-                數據洞察價格<br>智慧掌控預算
-            </h2>
-            <div class="relative max-w-2xl mx-auto group">
-                <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-2xl blur opacity-20 group-focus-within:opacity-50 transition duration-500"></div>
-                <input type="text" id="searchInput" 
-                    class="relative w-full bg-slate-900/80 border border-white/10 px-8 py-6 rounded-2xl text-xl font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder-slate-600"
-                    placeholder="輸入品牌或商品... (如: POLYWELL)">
-                <button onclick="performSearch()" class="absolute right-4 top-4 bg-blue-600 p-3 rounded-xl hover:bg-blue-500 transition-all">
-                    <i data-lucide="search" class="w-6 h-6"></i>
-                </button>
-            </div>
-            <div id="catFilters" class="flex flex-wrap justify-center gap-3 mt-10">
-                </div>
-        </div>
-
-        <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-32">
-            </div>
-
-        <div id="emptyState" class="text-center py-20 animate-float">
-            <div class="w-32 h-32 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/5">
-                <i data-lucide="database" class="w-12 h-12 text-slate-600"></i>
-            </div>
-            <h3 class="text-2xl font-bold text-slate-400">正在等待您的指令</h3>
-            <p class="text-slate-600 mt-2">請輸入關鍵字開始檢索大數據庫</p>
-        </div>
-    </main>
-
-    <div id="detailModal" class="hidden fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4">
-        <div class="glass w-full max-w-4xl rounded-[2.5rem] overflow-hidden flex flex-col md:flex-row shadow-2xl animate-in zoom-in duration-300">
-            <div class="flex-1 p-10 flex flex-col justify-between border-b md:border-b-0 md:border-r border-white/5">
-                <div>
-                    <span class="text-blue-500 text-[10px] font-black tracking-[0.2em] uppercase mb-2 block" id="mCat">CATEGORY</span>
-                    <h3 class="text-3xl font-black leading-tight" id="mTitle">PRODUCT NAME</h3>
-                </div>
-                <div class="h-64 mt-8 relative">
-                    <canvas id="priceChart"></canvas>
-                </div>
-                <div class="grid grid-cols-3 gap-6 mt-10">
-                    <div class="text-center">
-                        <p class="text-slate-500 text-[10px] font-bold uppercase mb-1">歷史最高</p>
-                        <p class="text-2xl font-black text-slate-200" id="mHigh">$0</p>
-                    </div>
-                    <div class="text-center py-2 px-4 rounded-2xl bg-blue-500/10 border border-blue-500/20">
-                        <p class="text-blue-400 text-[10px] font-bold uppercase mb-1">歷史最低</p>
-                        <p class="text-2xl font-black text-blue-400" id="mLow">$0</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-slate-500 text-[10px] font-bold uppercase mb-1">變動幅度</p>
-                        <p class="text-2xl font-black" id="mChange">0%</p>
-                    </div>
-                </div>
-            </div>
-            <div class="w-full md:w-80 p-10 bg-white/5 flex flex-col justify-between">
-                <div>
-                    <div class="mb-8">
-                        <p class="text-slate-400 text-xs font-bold mb-1">當前偵測售價</p>
-                        <p class="text-6xl font-black tracking-tighter" id="mPrice">$0</p>
-                    </div>
-                    <div id="adviceCard" class="p-6 rounded-3xl border flex flex-col gap-3">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="brain-circuit" class="w-5 h-5"></i>
-                            <span class="font-black text-xs uppercase tracking-widest">採買建議</span>
-                        </div>
-                        <p class="font-bold text-sm leading-relaxed" id="adviceText">正在分析市場波動...</p>
-                    </div>
-                </div>
                 <div class="space-y-4">
-                    <a id="mLink" href="#" target="_blank" class="block w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-5 rounded-2xl text-center shadow-xl shadow-blue-600/30 transition-all active:scale-95">前往酷澎購買</a>
-                    <button onclick="closeModal()" class="block w-full text-slate-500 font-bold py-2 text-sm hover:text-white transition-colors">關閉分析窗格</button>
+                    <div class="stat-card p-6 rounded-2xl">
+                        <p class="text-slate-400 text-xs font-bold uppercase mb-1">已捕獲商品</p>
+                        <h2 id="count-items" class="text-3xl font-black">0</h2>
+                    </div>
+                    <div class="stat-card p-6 rounded-2xl">
+                        <p class="text-slate-400 text-xs font-bold uppercase mb-1">涵蓋分類</p>
+                        <h2 id="count-cats" class="text-3xl font-black text-blue-500">0</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-10 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
+                <i data-lucide="info" class="w-4 h-4 inline mr-1"></i>
+                點擊商品即可啟動「價格雷達」深度分析
+            </div>
+        </aside>
+
+        <main class="flex-1 p-6 lg:p-12 overflow-y-auto">
+            
+            <div class="max-w-4xl mb-12">
+                <div class="search-glow glass rounded-3xl p-2 flex items-center transition-all">
+                    <div class="p-4 text-slate-500">
+                        <i data-lucide="search"></i>
+                    </div>
+                    <input type="text" id="searchInput" 
+                           class="w-full bg-transparent border-none outline-none py-4 text-lg font-medium placeholder-slate-600"
+                           placeholder="輸入品牌或關鍵字開始挖掘... (如: 小米, POLYWELL)">
+                </div>
+            </div>
+
+            <div id="resultsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                </div>
+
+            <div id="welcomeScreen" class="flex flex-col items-center justify-center py-32 text-center">
+                <div class="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mb-6">
+                    <i data-lucide="layout-dashboard" class="w-10 h-10 text-slate-500"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-400 mb-2">雷達掃描中...</h3>
+                <p class="text-slate-600 max-w-sm">系統正在從 GitHub 讀取您辛苦收割的 25 個分類大數據。請在上方輸入框進行搜尋。</p>
+            </div>
+        </main>
+    </div>
+
+    <div id="chartModal" class="hidden fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4">
+        <div class="glass w-full max-w-4xl rounded-[2.5rem] p-8 md:p-12 relative">
+            <button onclick="closeModal()" class="absolute top-6 right-6 p-2 rounded-full hover:bg-white/5 transition-all">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="mb-8">
+                <span id="mCat" class="text-blue-500 text-[10px] font-black tracking-widest uppercase">Category</span>
+                <h3 id="mTitle" class="text-2xl font-black mt-2">商品名稱</h3>
+            </div>
+            <div class="h-64 md:h-80">
+                <canvas id="priceChart"></canvas>
+            </div>
+            <div class="grid grid-cols-3 gap-6 mt-10 border-t border-white/5 pt-10">
+                <div class="text-center">
+                    <p class="text-slate-500 text-[10px] font-bold uppercase mb-1 tracking-widest">當前價格</p>
+                    <p id="mPrice" class="text-3xl font-black text-white">$0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-slate-500 text-[10px] font-bold uppercase mb-1 tracking-widest">歷史最低</p>
+                    <p id="mLow" class="text-3xl font-black text-green-400">$0</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-slate-500 text-[10px] font-bold uppercase mb-1 tracking-widest">歷史最高</p>
+                    <p id="mHigh" class="text-3xl font-black text-red-500">$0</p>
                 </div>
             </div>
         </div>
@@ -126,30 +106,19 @@
         const OWNER = 'ox0114xo';
         const REPO = 'Coupang';
         let store = [];
-        let priceChart = null;
+        let chartInstance = null;
 
         async function init() {
             lucide.createIcons();
-            await loadData();
-        }
-
-        async function loadData() {
             try {
                 const resp = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/data`);
                 const cats = await resp.json();
-                const filterContainer = document.getElementById('catFilters');
+                document.getElementById('count-cats').innerText = cats.filter(c => c.type === 'dir').length;
 
                 for (let cat of cats) {
                     if (cat.type !== 'dir') continue;
-                    
-                    const btn = document.createElement('button');
-                    btn.className = "px-5 py-2.5 rounded-xl glass text-xs font-black hover:bg-blue-600 hover:text-white transition-all border border-white/5";
-                    btn.innerText = cat.name;
-                    btn.onclick = () => { document.getElementById('searchInput').value = cat.name; performSearch(); };
-                    filterContainer.appendChild(btn);
-
                     const fileResp = await fetch(cat.url);
-                    const files = (await fileResp.json()).slice(-5); // 每個分類讀最新5個檔案
+                    const files = (await fileResp.json()).slice(-10); // 讀取最新 10 份 CSV
                     
                     for (let file of files) {
                         const csvText = await (await fetch(file.download_url)).text();
@@ -157,7 +126,9 @@
                             header: true,
                             complete: (res) => {
                                 res.data.forEach(item => {
-                                    if (!item.商品網址) return;
+                                    if (!item.商品網址 || item.價格 < 30) return; // 自動清洗髒數據
+                                    if (item.商品名稱.includes("免運") || item.商品名稱.length < 5) return; // 清洗廣告標籤
+
                                     let match = store.find(s => s.url === item.商品網址);
                                     if (match) {
                                         match.history.push({ date: item.紀錄時間, price: parseInt(item.價格) });
@@ -165,109 +136,79 @@
                                         store.push({
                                             name: item.商品名稱,
                                             cat: item.分類,
-                                            price: parseInt(item.價格),
                                             url: item.商品網址,
                                             history: [{ date: item.紀錄時間, price: parseInt(item.價格) }]
                                         });
                                     }
                                 });
+                                document.getElementById('count-items').innerText = store.length;
                             }
                         });
                     }
                 }
-            } catch (e) { console.error("API連線失敗", e); }
+            } catch(e) { console.error("數據加載失敗"); }
         }
 
         function performSearch() {
             const query = document.getElementById('searchInput').value.toLowerCase();
             const grid = document.getElementById('resultsGrid');
-            const empty = document.getElementById('emptyState');
+            const welcome = document.getElementById('welcomeScreen');
 
-            if (query.length < 2) { grid.innerHTML = ""; empty.classList.remove('hidden'); return; }
-            empty.classList.add('hidden');
+            if (query.length < 2) { grid.innerHTML = ""; welcome.classList.remove('hidden'); return; }
+            welcome.classList.add('hidden');
 
-            const results = store.filter(i => i.name.toLowerCase().includes(query) || i.cat.includes(query)).slice(0, 30);
+            const results = store.filter(i => i.name.toLowerCase().includes(query) || i.cat.includes(query)).slice(0, 20);
             grid.innerHTML = results.map(i => {
-                const low = Math.min(...i.history.map(h => h.price));
-                const isDeal = i.price <= low;
+                const latestPrice = i.history[i.history.length - 1].price;
                 return `
-                <div class="card-glow glass p-8 rounded-[2.5rem] cursor-pointer transition-all flex flex-col justify-between" onclick='openDetail(${JSON.stringify(i).replace(/'/g, "&apos;")})'>
-                    <div>
-                        <div class="flex justify-between items-center mb-6">
-                            <span class="px-3 py-1 bg-blue-500/10 text-blue-400 rounded-lg text-[10px] font-black uppercase tracking-tighter">${i.cat}</span>
-                            ${isDeal ? '<span class="flex items-center gap-1 text-[10px] font-black text-green-400 animate-pulse"><i data-lucide="trending-down" class="w-3 h-3"></i>歷史低價</span>' : ''}
-                        </div>
-                        <h3 class="text-lg font-bold text-slate-100 leading-tight mb-6 line-clamp-2 h-12">${i.name}</h3>
+                <div class="glass p-6 rounded-3xl hover:border-blue-500 transition-all cursor-pointer flex justify-between items-center group" 
+                     onclick='openModal(${JSON.stringify(i).replace(/'/g, "&apos;")})'>
+                    <div class="flex-1 pr-4">
+                        <span class="text-[9px] font-black text-blue-500 uppercase tracking-tighter">${i.cat}</span>
+                        <h3 class="font-bold text-sm line-clamp-1 mt-1 group-hover:text-blue-400 transition-colors">${i.name}</h3>
+                        <p class="text-2xl font-black mt-2">$${latestPrice}</p>
                     </div>
-                    <div class="flex justify-between items-end pt-4 border-t border-white/5">
-                        <div>
-                            <p class="text-slate-500 text-[10px] font-bold uppercase mb-1">Last Update</p>
-                            <p class="text-3xl font-black text-white">$${i.price}</p>
-                        </div>
-                        <div class="w-12 h-12 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-500 border border-blue-500/20">
-                            <i data-lucide="line-chart" class="w-6 h-6"></i>
-                        </div>
+                    <div class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-blue-600 transition-all">
+                        <i data-lucide="trending-up" class="w-5 h-5"></i>
                     </div>
                 </div>`;
             }).join('');
             lucide.createIcons();
         }
 
-        function openDetail(item) {
+        function openModal(item) {
             document.getElementById('mTitle').innerText = item.name;
             document.getElementById('mCat').innerText = item.cat;
-            document.getElementById('mPrice').innerText = `$${item.price}`;
-            document.getElementById('mLink').href = item.url;
-            document.getElementById('detailModal').classList.remove('hidden');
-
             const history = item.history.sort((a,b) => new Date(a.date) - new Date(b.date));
             const prices = history.map(h => h.price);
-            const low = Math.min(...prices);
-            const high = Math.max(...prices);
-            const diff = (((item.price - low) / low) * 100).toFixed(0);
-
-            document.getElementById('mLow').innerText = `$${low}`;
-            document.getElementById('mHigh').innerText = `$${high}`;
-            document.getElementById('mChange').innerText = `${diff}%`;
-            document.getElementById('mChange').className = `text-2xl font-black ${diff == 0 ? 'text-green-400' : 'text-orange-500'}`;
-
-            const adv = document.getElementById('adviceCard');
-            const advT = document.getElementById('adviceText');
-            if (item.price <= low) {
-                adv.className = "p-6 rounded-3xl mb-8 border border-green-500/30 bg-green-500/10 text-green-400";
-                advT.innerText = "目前處於歷史低價點位，系統建議立即入手！";
-            } else if (item.price >= high) {
-                adv.className = "p-6 rounded-3xl mb-8 border border-red-500/30 bg-red-500/10 text-red-400";
-                advT.innerText = "目前價格處於高點，除非剛需否則建議觀望。";
-            } else {
-                adv.className = "p-6 rounded-3xl mb-8 border border-blue-500/30 bg-blue-500/10 text-blue-400";
-                advT.innerText = "價格正處於中位數盤整，可依需求自行決定。";
-            }
-
+            
+            document.getElementById('mPrice').innerText = `$${prices[prices.length-1]}`;
+            document.getElementById('mLow').innerText = `$${Math.min(...prices)}`;
+            document.getElementById('mHigh').innerText = `$${Math.max(...prices)}`;
+            
+            document.getElementById('chartModal').classList.remove('hidden');
             renderChart(history);
             lucide.createIcons();
         }
 
         function renderChart(history) {
             const ctx = document.getElementById('priceChart').getContext('2d');
-            if (priceChart) priceChart.destroy();
-            
-            priceChart = new Chart(ctx, {
+            if (chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: history.map(h => h.date),
                     datasets: [{
                         data: history.map(h => h.price),
                         borderColor: '#3b82f6',
-                        borderWidth: 4,
+                        borderWidth: 5,
                         pointRadius: 0,
-                        pointHoverRadius: 8,
-                        pointHoverBackgroundColor: '#fff',
+                        pointHoverRadius: 10,
                         tension: 0.4,
                         fill: true,
                         backgroundColor: (c) => {
                             const g = c.chart.ctx.createLinearGradient(0,0,0,400);
-                            g.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
+                            g.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
                             g.addColorStop(1, 'rgba(59, 130, 246, 0)');
                             return g;
                         }
@@ -276,18 +217,19 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+                    plugins: { legend: { display: false } },
                     scales: { 
-                        x: { grid: { display: false }, ticks: { color: '#64748b' } },
-                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } }
+                        x: { display: false }, 
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } } 
                     }
                 }
             });
         }
 
-        function closeModal() { document.getElementById('detailModal').classList.add('hidden'); }
-        document.getElementById('searchInput').addEventListener('keypress', (e) => { if(e.key==='Enter') performSearch(); });
+        function closeModal() { document.getElementById('chartModal').classList.add('hidden'); }
+        document.getElementById('searchInput').addEventListener('input', performSearch);
         init();
     </script>
 </body>
 </html>
+
